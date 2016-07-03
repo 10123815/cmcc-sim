@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Simulation scenario. All events take place at this scene.
+ * @author ysd
+ */
 
-
-var Node = require('node').Node;
+var sim = require('./sim-mng');
+var UserNode = require('./net-node').UserNode;
+var Cloudlet = require('./net-node').Cloudlet;

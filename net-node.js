@@ -1,11 +1,11 @@
 /**
- * @fileOverview Node type defination.
+ * @fileoverview Node type defination.
  * @author ysd
  */
 
 var event_define = require('./event-define');
 var events = require('events');
-var app = require('./app');
+var App = require('./app').App;
 
 function Node(id) {
     this.id = id;
@@ -37,9 +37,11 @@ function Cloudlet(id) {
 
 Cloudlet.prototype = new Node;
 
-function UserNode(id) {
+function UserNode(cid) {
 
-    this.cloudlet;
+    this.cloudletId = cid;
+
+    this.app = new App(cid);
     
 }
 
@@ -57,3 +59,6 @@ UserNode.prototype.sendToCloudlet = function (event, id, time, obj) {
         cloudets[id].emitter.emit(event, obj);
     }, time);
 }
+
+exports.UserNode = UserNode;
+exports.Cloudlet = Cloudlet;
