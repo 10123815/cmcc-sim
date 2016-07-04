@@ -16,6 +16,8 @@ function Cloudlet(id) {
     this.base = Node;
     this.base(id);
 
+    this.speed = 16;    // intros/ms
+
     this.componentRegistry = new Map();
 
     /**
