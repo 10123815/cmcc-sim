@@ -43,7 +43,7 @@ function UserNode(cid) {
 
     this.cloudletId = cid;
 
-    this.app = new App(cid);
+    this.app = new App(this);
     
 }
 

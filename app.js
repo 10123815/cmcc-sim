@@ -17,23 +17,33 @@ var events = require('events');
 var compEvent = new events.EventEmitter();
 
 /**
- * When a component is completed, run the next one.
+ * App component relationship
  */
-compEvent.on('end', function (app) {
-    // TODO(ysd): Randomly select the next component index.
+var CALL_GRAPH = [
+    [0, 1, 0, 0, 1, 0, 0],
+    [0, 1, 1, 1, 0, 0, 0],
+    [0, 1, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1],
+    [1, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0]
+];
 
-    runComp(app.cloudlet.speed, app.components[app.currentCompIndex], 0);
-});
-
-function Method() {
-    this.load = rand.pnorm(0.025, 1.67);            // intros
+function Method(f) {
+    this.load = rand.penorm(0.025, 1.67);            // intros
     this.call = rand.geo(0.25) + 1;
-    this.arg = rand.pnorm(0.00000125, 0.0000083)    // bits
-    this.res = rand.pnorm(0.0000125, 0.000083)      // bits
+    this.arg = rand.penorm(0.00000125, 0.0000083)    // bits
+    this.res = rand.penorm(0.0000125, 0.000083)      // bits
+
+    this.compFreq = f;
 }
 
-Method.prototype.run = function (speed, freq) {
-    return this.load * this.call * freq / speed;
+Method.prototype.run = function (speed) {
+    return this.load * this.call / speed;
+}
+
+Method.prototype.expectSpeed = function () {
+    return this.load * this.call * this.compFreq;
 }
 
 function Component(app) {
@@ -43,19 +53,26 @@ function Component(app) {
      */
     this.codeSize = 0;
 
-    var methodCount = rand.geo(0.25) + 1;
-    this.methods = new Array(methodCount);
-
-    for (var i = 0; i < methodCount; i++) {
-        var mt = new Method();
-        this.methods[i] = mt;
-        this.codeSize += mt.load * mt.call * 320;
-    }
-
     /**
      * @type {App} Which application this component belong to. 
      */
     this.belong = app;
+
+    /**
+     * How often this component be called in 1/ms. 
+     * Initialized with the sequence's arrival interval.
+     */
+    this.freq = 1 / rand.exp(rand.pnorm(0.0001, 0.000025)) * 7;
+
+    var methodCount = rand.geo(0.25) + 1;
+    this.methods = new Array(methodCount);
+
+    for (var i = 0; i < methodCount; i++) {
+        var mt = new Method(this.freq);
+        this.methods[i] = mt;
+        this.codeSize += mt.load * mt.call;
+    }
+    this.codeSize *= 32;
 }
 
 /**
@@ -69,30 +86,75 @@ function runComp(speed, comp, index) {
         compEvent.emit('end', comp.belong);
         return;
     }
-    // console.log(index + '    ' + comp.methods.length + '     ' + sim_mng.SIM_TIME);
-    var exeTime = comp.methods[index].run(speed, 1);
+    console.log(comp.belong.currentCompIndex + '     ' + sim_mng.SIM_TIME);
+    var exeTime = comp.methods[index].run(speed, comp.freq);
     sim_mng.SIM_TIME += exeTime;
     setTimeout(function () {
         runComp(speed, comp, index + 1);
     }, sim_mng.DELTA_TIME);
 }
 
-function App(c) {
+/**
+ * When a component is completed, run the next one.
+ */
+compEvent.on('end', function (app) {
+    // Randomly select the next component index.
+    var nextCompIndices = CALL_GRAPH[app.currentCompIndex];
+    var sum = 0;
+    var probilities = {};
+    for (var i = 0; i < 7; i++) {
+        if (nextCompIndices[i] == 1) {
+            sum += app.components[i].freq;
+            probilities[i] = sum;
+        }
+    }
+    if (sum == 0) {
+        // Is the last component.
+        // Restart the app.
+        app.currentCompIndex = 0;
+        sim_mng.SIM_TIME += app.interval();
+        setTimeout(function () {
+            StartApp(app);
+        }, sim_mng.DELTA_TIME);
+        return;
+    }
 
-    this.callGraph = [
-        [0, 1, 0, 0, 1, 0, 0],
-        [0, 1, 1, 1, 0, 0, 0],
-        [0, 1, 0, 1, 0, 0, 1],
-        [0, 0, 0, 0, 1, 0, 0],
-        [0, 0, 0, 0, 0, 1, 1],
-        [1, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0]
-    ];
+    var rv = Math.random() * sum;
+    var nextIndex = -1;
+    for (var index in probilities) {
+        if (rv < probilities[index]) {
+            nextIndex = index;
+            break;
+        }
+    }
+
+    if (nextIndex == -1) {
+        // No next component.
+        // Restart the app.
+        app.currentCompIndex = 0;
+        sim_mng.SIM_TIME += app.interval();
+        setTimeout(function () {
+            StartApp(app);
+        }, SIM_TIME);
+        return;
+    }
+    
+    app.currentCompIndex = nextIndex;
+    // Run next component.
+    runComp(app.cloudlet.speed, app.components[app.currentCompIndex], 0);
+});
+
+/**
+ * App class defination.
+ * @param {Cloudlet} c Cloudlet this app want to execute on.
+ */
+function App(c) {
 
     /**
      * All components of this app.
      */
     this.components = new Array(7);
+    var pbl = 0;
     for (var i = 0; i < 7; i++) {
         this.components[i] = new Component(this);
     }
@@ -106,8 +168,13 @@ function App(c) {
 
 }
 
-App.prototype.start = function () {
-    runComp(this.cloudlet.speed, this.components[0], 0);
+App.prototype.interval = function () {
+    return rand.exp(rand.pnorm(0.0001, 0.000025));
+}
+
+function StartApp(app) {
+    runComp(app.cloudlet.speed, app.components[0], 0);
 }
 
 exports.App = App;
+exports.StartApp = StartApp;
