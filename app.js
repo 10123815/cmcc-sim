@@ -48,6 +48,8 @@ Method.prototype.expectSpeed = function () {
 
 function Component(app) {
 
+    this.offloaded = false;
+
     /**
      * Machine code size in bits to transmit to the cloudlet.
      */
@@ -86,8 +88,13 @@ function runComp(speed, comp, index) {
         compEvent.emit('end', comp.belong);
         return;
     }
+
     console.log(comp.belong.currentCompIndex + '     ' + sim_mng.SIM_TIME);
+
     var exeTime = comp.methods[index].run(speed, comp.freq);
+    if (comp.offloaded) {
+        // Add the transmit time.
+    }
     sim_mng.SIM_TIME += exeTime;
     setTimeout(function () {
         runComp(speed, comp, index + 1);
@@ -138,17 +145,17 @@ compEvent.on('end', function (app) {
         }, SIM_TIME);
         return;
     }
-    
+
     app.currentCompIndex = nextIndex;
     // Run next component.
-    runComp(app.cloudlet.speed, app.components[app.currentCompIndex], 0);
+    runComp(app.speed, app.components[app.currentCompIndex], 0);
 });
 
 /**
  * App class defination.
  * @param {Cloudlet} c Cloudlet this app want to execute on.
  */
-function App(c) {
+function App(n) {
 
     /**
      * All components of this app.
@@ -160,9 +167,14 @@ function App(c) {
     }
 
     /**
-     * @type {Cloudlet}
+     * @type {Number} Speed of the node that this app run at.
      */
-    this.cloudlet = c;
+    this.speed = n.speed;
+
+    /**
+     * @type {Number} Speed of the origin node.
+     */
+    this.oriSpeed = n.speed;
 
     this.currentCompIndex = 0;
 
@@ -173,7 +185,13 @@ App.prototype.interval = function () {
 }
 
 function StartApp(app) {
-    runComp(app.cloudlet.speed, app.components[0], 0);
+    var spd = app.oriSpeed;
+    if (app.speed > app.oriSpeed) {
+        // Offload!!!!
+        app.components[0].offloaded = true;
+        spd = app.speed;
+    }
+    runComp(spd, app.components[0], 0);
 }
 
 exports.App = App;

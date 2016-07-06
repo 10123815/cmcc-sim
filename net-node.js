@@ -6,17 +6,23 @@
 var event_define = require('./event-define');
 var events = require('events');
 var App = require('./app').App;
+var StartApp = require('./app').StartApp;
+var rand = require('./pseudo_rand');
+var v2 = require('./common');
+var Vector2 = v2.Vector2;
 
-function Node(id) {
+function Node(id, spd) {
     this.id = id;
+    this.speed = spd;
+    this.position = new Vector2(0, 0);
 }
 
 function Cloudlet(id) {
 
-    this.base = Node;
-    this.base(id);
-
     this.speed = 16;    // intros/ms
+
+    this.base = Node;
+    this.base(id, speed);
 
     this.componentRegistry = new Map();
 
@@ -39,12 +45,20 @@ function Cloudlet(id) {
 
 Cloudlet.prototype = new Node;
 
-function UserNode(cid) {
+function UserNode(id) {
 
-    this.cloudletId = cid;
+    this.speed = rand.pnorm(1, 0.4) * rand.uniInt(1, 4);    // intros/ms
+
+    this.base = Node;
+    this.base(id, this.speed);
+
+    this.cloudlet = null;
 
     this.app = new App(this);
-    
+
+    // Start run app.
+    StartApp(this.app);
+
 }
 
 UserNode.prototype = new Node;
@@ -60,6 +74,16 @@ UserNode.prototype.sendToCloudlet = function (event, id, time, obj) {
     setTimeout(function () {
         cloudets[id].emitter.emit(event, obj);
     }, time);
+}
+
+/**
+ * User node join a cloudlet and offload its components to the cloudlet.
+ * @parma   {Cloudlet} c The cloudlet node is joining.
+ */
+UserNode.prototype.joinCloudlet = function (c) {
+    this.cloudlet = c;
+    this.app.speed = c.speed;
+    this.cloudlet.userNodes.Set(this.id, this);
 }
 
 exports.UserNode = UserNode;
