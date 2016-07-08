@@ -5,24 +5,34 @@
 
 var event_define = require('./event-define');
 var events = require('events');
+var sim_mng = require('./sim-mng');
 var App = require('./app').App;
 var StartApp = require('./app').StartApp;
 var rand = require('./pseudo_rand');
 var v2 = require('./common');
 var Vector2 = v2.Vector2;
+var mm = require('./mobility');
+
+/**
+ * Allocate a random position for a node.
+ */
+function allocatePosition(){
+    var x = rand.uniInt(0, sim_mng.SIM_BORDER[0]);
+    var y = rand.uniInt(0, sim_mng.SIM_BORDER[1]);
+    return new Vector2(x, y);
+}
 
 function Node(id, spd) {
     this.id = id;
     this.speed = spd;
-    this.position = new Vector2(0, 0);
+    this.position = allocatePosition();
 }
 
 function Cloudlet(id) {
 
     this.speed = 16;    // intros/ms
 
-    this.base = Node;
-    this.base(id, speed);
+    Node.call(this, id, this.speed);
 
     this.componentRegistry = new Map();
 
@@ -49,15 +59,19 @@ function UserNode(id) {
 
     this.speed = rand.pnorm(1, 0.4) * rand.uniInt(1, 4);    // intros/ms
 
-    this.base = Node;
-    this.base(id, this.speed);
+    Node.call(this, id, this.speed);
 
     this.cloudlet = null;
 
     this.app = new App(this);
 
+    this.mobility = new mm.RWP(this);
+
     // Start run app.
-    StartApp(this.app);
+    this.app.start();
+
+    // Start moving.
+    this.mobility.move();
 
 }
 
