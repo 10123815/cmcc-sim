@@ -30,7 +30,7 @@ RWP.prototype.move = function () {
         // Still move along the road.
         var dir = v2.vector2Minus(this.destination, this.node.position);
         dir.normalize();
-        var movement = v2.vector2Multi(dir, this.speed * sim_mng.DELTA_TIME);
+        var movement = v2.vector2Multi(dir, this.speed);
         this.node.position = v2.vector2Add(this.node.position, movement);
 
         var dis = v2.vector2Distance(this.destination, this.node.position);
@@ -49,8 +49,7 @@ RWP.prototype.move = function () {
         }
     }
 
-    sim_mng.SIM_TIME += 1000;
-    setTimeout(this.move.bind(this), sim_mng.DELTA_TIME);
+    setTimeout(this.move.bind(this), 1 * sim_mng.DELTA_TIME);
     // console.log(this.node.position);
 }
 

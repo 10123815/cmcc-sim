@@ -12,6 +12,7 @@ var rand = require('./pseudo_rand');
 var v2 = require('./common');
 var Vector2 = v2.Vector2;
 var mm = require('./mobility');
+var fs = require('fs');
 
 /**
  * Allocate a random position for a node.
@@ -57,11 +58,31 @@ Cloudlet.prototype.discoverNode = function (range) {
             node.joinCloudlet(cld);
         }
     });
-    setTimeout(this.discoverNode.bind(this, range), sim_mng.DELTA_TIME * 10);
+    setTimeout(this.discoverNode.bind(this, range), sim_mng.DELTA_TIME * 1000);
 }
 
 Cloudlet.prototype.startDiscover = function (range) {
+    this.range = range;
     this.discoverNode(range);
+}
+
+Cloudlet.prototype.check = function () {
+    var cld = this;
+    this.userNodes.forEach(function (node, id, map) {
+        var dis = v2.vector2Distance(node.position, cld.position);
+        // console.log(dis);
+        if (dis > cld.range) {
+            // Remove this node.
+            map.delete(id);
+            // Leave
+            node.leaveCloudlet();
+        }
+    });
+    setTimeout(this.check.bind(this), sim_mng.DELTA_TIME * 1000);
+}
+
+Cloudlet.prototype.startCheck = function () {
+    this.check();
 }
 
 function UserNode(id) {
@@ -108,6 +129,33 @@ UserNode.prototype.sendToCloudlet = function (event, id, time, obj) {
 UserNode.prototype.joinCloudlet = function (c) {
     this.cloudlet = c;
     this.app.speed = c.speed;
+    if (this.id == 0)
+        fs.open("output.txt", "a", 0644, function (e, fd) {
+            console.log('++++++++++++++++++++++++++++++')
+            if (e)
+                throw e;
+            fs.write(fd, '-100\n', 0, 'utf8', function (e) {
+                if (e)
+                    throw e;
+                fs.closeSync(fd);
+            })
+        });
+}
+
+UserNode.prototype.leaveCloudlet = function () {
+    this.cloudlet = null;
+    this.app.speed = this.app.oriSpeed;
+    if (this.id == 0)
+        fs.open("output.txt", "a", 0644, function (e, fd) {
+            console.log('--------------------------')
+            if (e)
+                throw e;
+            fs.write(fd, '-500\n', 0, 'utf8', function (e) {
+                if (e)
+                    throw e;
+                fs.closeSync(fd);
+            })
+        });
 }
 
 exports.UserNode = UserNode;

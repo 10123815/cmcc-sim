@@ -11,6 +11,8 @@ var rand = require('./pseudo_rand');
 var sim_mng = require('./sim-mng');
 var events = require('events');
 
+var fs = require('fs');
+
 /**
  * Component related events.
  */
@@ -30,10 +32,10 @@ var CALL_GRAPH = [
 ];
 
 function Method(f) {
-    this.load = rand.penorm(0.025, 1.67);            // intros
+    this.load = rand.penorm(0.025, 167);            // intros
     this.call = rand.geo(0.25) + 1;
-    this.arg = rand.penorm(0.00000125, 0.0000083)    // bits
-    this.res = rand.penorm(0.0000125, 0.000083)      // bits
+    this.arg = rand.penorm(0.00000125, 83)    // bits
+    this.res = rand.penorm(0.0000125, 83)      // bits
 
     this.compFreq = f;
 }
@@ -89,41 +91,24 @@ Component.prototype.run = function (speed, index) {
         return;
     }
 
-    // console.log(this.belong.currentCompIndex + '     ' + sim_mng.SIM_TIME);
-    // console.log(this.methods[index].expectSpeed());
-
-    var exeTime = this.methods[index].run(speed, this.freq);
+    var exeTime = this.methods[index].run(speed);
     if (this.offloaded) {
         // Add the transmit time.
+        exeTime += (this.methods[index].arg + this.methods[index].res) / sim_mng.BANDWIDTH;
     }
-    sim_mng.SIM_TIME += exeTime;
-    setTimeout(this.run.bind(this, speed, index + 1), sim_mng.DELTA_TIME);
+    this.belong.addTime(exeTime);
+    if (this.belong.nodeId == 0)
+        fs.open("output.txt", "a", 0644, function (e, fd) {
+            if (e)
+                throw e;
+            fs.write(fd, exeTime + '\n', 0, 'utf8', function (e) {
+                if (e)
+                    throw e;
+                fs.closeSync(fd);
+            })
+        });
+    setTimeout(this.run.bind(this, speed, index + 1), exeTime * sim_mng.DELTA_TIME);
 }
-
-// /**
-//  * Run a component on a node of speed.
-//  * @param {Number}      speed   Speed of the node.
-//  * @param {Component}   comp    Component need to run.
-//  * @param {Number}      index   Index of the method in the component.
-//  */
-// function runComp(speed, comp, index) {
-//     if (index >= comp.methods.length) {
-//         compEvent.emit('end', comp.belong);
-//         return;
-//     }
-
-//     // console.log(comp.belong.currentCompIndex + '     ' + sim_mng.SIM_TIME);
-//     console.log(comp.methods[index].expectSpeed());
-
-//     var exeTime = comp.methods[index].run(speed, comp.freq);
-//     if (comp.offloaded) {
-//         // Add the transmit time.
-//     }
-//     sim_mng.SIM_TIME += exeTime;
-//     setTimeout(function () {
-//         runComp(speed, comp, index + 1);
-//     }, sim_mng.DELTA_TIME);
-// }
 
 /**
  * When a component is completed, run the next one.
@@ -143,8 +128,9 @@ compEvent.on('end', function (app) {
         // Is the last component.
         // Restart the app.
         app.currentCompIndex = 0;
-        sim_mng.SIM_TIME += app.interval();
-        setTimeout(app.start.bind(app), sim_mng.DELTA_TIME);
+        var ari = app.interval();
+        app.addTime(ari);
+        setTimeout(app.start.bind(app), ari * sim_mng.DELTA_TIME);
         return;
     }
 
@@ -161,8 +147,9 @@ compEvent.on('end', function (app) {
         // No next component.
         // Restart the app.
         app.currentCompIndex = 0;
-        sim_mng.SIM_TIME += app.interval();
-        setTimeout(app.start.bind(app), sin_mng.DELTA_TIME);
+        var ari = app.interval();
+        app.addTime(ari);
+        setTimeout(app.start.bind(app), ari * sim_mng.DELTA_TIME);
         return;
     }
 
@@ -187,6 +174,8 @@ function App(n) {
         this.components[i] = new Component(this, i);
     }
 
+    this.nodeId = n.id;
+
     /**
      * @type {Number} Speed of the node that this app run at.
      */
@@ -199,6 +188,12 @@ function App(n) {
 
     this.currentCompIndex = 0;
 
+    this.time = 0;
+
+}
+
+App.prototype.addTime = function (time) {
+    this.time += time;
 }
 
 App.prototype.interval = function () {
@@ -209,8 +204,8 @@ App.prototype.start = function () {
     var spd = this.oriSpeed;
     if (this.speed > spd) {
         // Offload !!!!
-        app.components[0].offloaded = true;
-        spd = app.speed;
+        this.components[0].offloaded = true;
+        spd = this.speed;
     }
     // runComp(spd, this.components[0], 0);
     this.components[0].run(spd, 0);
@@ -227,4 +222,3 @@ App.prototype.start = function () {
 // }
 
 exports.App = App;
-exports.StartApp = StartApp;

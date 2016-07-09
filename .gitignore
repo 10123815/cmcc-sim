@@ -1,3 +1,4 @@
 *.node
+jsconfig.json
 typings/
-
+.vscode/

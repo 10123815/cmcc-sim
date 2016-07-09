@@ -9,14 +9,12 @@ exports.cloudlets = new Map();
 exports.userNodes = new Map();
 
 // All time in ms.
-exports.DELTA_TIME = 0.1;
-exports.SIM_TIME = 0;
-exports.TOTAL_TIME = 3600000;
+exports.DELTA_TIME = 0.001;      // 1 delta time == 1ms       
+exports.TOTAL_TIME = 3600000;    // number of delta time.
 
 exports.SIM_BORDER = [1000, 1000];
 
-exports.USER_NUMBER = 100;
+exports.USER_NUMBER = 50;
+exports.CLOUDLET_NUMBER = 5;
 
-exports.CLOUDLET_NUMBER = 1;
-
-
+exports.BANDWIDTH = 1677721.6;  // bits
