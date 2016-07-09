@@ -46,9 +46,10 @@ Method.prototype.expectSpeed = function () {
     return this.load * this.call * this.compFreq;
 }
 
-function Component(app) {
+function Component(app, id) {
 
     this.offloaded = false;
+    this.id = id;
 
     /**
      * Machine code size in bits to transmit to the cloudlet.
@@ -80,26 +81,49 @@ function Component(app) {
 /**
  * Run a component on a node of speed.
  * @param {Number}      speed   Speed of the node.
- * @param {Component}   comp    Component need to run.
  * @param {Number}      index   Index of the method in the component.
  */
-function runComp(speed, comp, index) {
-    if (index >= comp.methods.length) {
-        compEvent.emit('end', comp.belong);
+Component.prototype.run = function (speed, index) {
+    if (index >= this.methods.length) {
+        compEvent.emit('end', this.belong);
         return;
     }
 
-    console.log(comp.belong.currentCompIndex + '     ' + sim_mng.SIM_TIME);
+    // console.log(this.belong.currentCompIndex + '     ' + sim_mng.SIM_TIME);
+    // console.log(this.methods[index].expectSpeed());
 
-    var exeTime = comp.methods[index].run(speed, comp.freq);
-    if (comp.offloaded) {
+    var exeTime = this.methods[index].run(speed, this.freq);
+    if (this.offloaded) {
         // Add the transmit time.
     }
     sim_mng.SIM_TIME += exeTime;
-    setTimeout(function () {
-        runComp(speed, comp, index + 1);
-    }, sim_mng.DELTA_TIME);
+    setTimeout(this.run.bind(this, speed, index + 1), sim_mng.DELTA_TIME);
 }
+
+// /**
+//  * Run a component on a node of speed.
+//  * @param {Number}      speed   Speed of the node.
+//  * @param {Component}   comp    Component need to run.
+//  * @param {Number}      index   Index of the method in the component.
+//  */
+// function runComp(speed, comp, index) {
+//     if (index >= comp.methods.length) {
+//         compEvent.emit('end', comp.belong);
+//         return;
+//     }
+
+//     // console.log(comp.belong.currentCompIndex + '     ' + sim_mng.SIM_TIME);
+//     console.log(comp.methods[index].expectSpeed());
+
+//     var exeTime = comp.methods[index].run(speed, comp.freq);
+//     if (comp.offloaded) {
+//         // Add the transmit time.
+//     }
+//     sim_mng.SIM_TIME += exeTime;
+//     setTimeout(function () {
+//         runComp(speed, comp, index + 1);
+//     }, sim_mng.DELTA_TIME);
+// }
 
 /**
  * When a component is completed, run the next one.
@@ -120,9 +144,7 @@ compEvent.on('end', function (app) {
         // Restart the app.
         app.currentCompIndex = 0;
         sim_mng.SIM_TIME += app.interval();
-        setTimeout(function () {
-            StartApp(app);
-        }, sim_mng.DELTA_TIME);
+        setTimeout(app.start.bind(app), sim_mng.DELTA_TIME);
         return;
     }
 
@@ -140,15 +162,14 @@ compEvent.on('end', function (app) {
         // Restart the app.
         app.currentCompIndex = 0;
         sim_mng.SIM_TIME += app.interval();
-        setTimeout(function () {
-            StartApp(app);
-        }, SIM_TIME);
+        setTimeout(app.start.bind(app), sin_mng.DELTA_TIME);
         return;
     }
 
     app.currentCompIndex = nextIndex;
     // Run next component.
-    runComp(app.speed, app.components[app.currentCompIndex], 0);
+    // runComp(app.speed, app.components[app.currentCompIndex], 0);
+    app.components[app.currentCompIndex].run(app.speed, 0);
 });
 
 /**
@@ -163,7 +184,7 @@ function App(n) {
     this.components = new Array(7);
     var pbl = 0;
     for (var i = 0; i < 7; i++) {
-        this.components[i] = new Component(this);
+        this.components[i] = new Component(this, i);
     }
 
     /**
@@ -184,15 +205,26 @@ App.prototype.interval = function () {
     return rand.exp(rand.pnorm(0.0001, 0.000025));
 }
 
-function StartApp(app) {
-    var spd = app.oriSpeed;
-    if (app.speed > app.oriSpeed) {
-        // Offload!!!!
+App.prototype.start = function () {
+    var spd = this.oriSpeed;
+    if (this.speed > spd) {
+        // Offload !!!!
         app.components[0].offloaded = true;
         spd = app.speed;
     }
-    runComp(spd, app.components[0], 0);
+    // runComp(spd, this.components[0], 0);
+    this.components[0].run(spd, 0);
 }
+
+// function StartApp(app) {
+//     var spd = app.oriSpeed;
+//     if (app.speed > app.oriSpeed) {
+//         // Offload!!!!
+//         app.components[0].offloaded = true;
+//         spd = app.speed;
+//     }
+//     runComp(spd, app.components[0], 0);
+// }
 
 exports.App = App;
 exports.StartApp = StartApp;

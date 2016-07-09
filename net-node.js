@@ -16,7 +16,7 @@ var mm = require('./mobility');
 /**
  * Allocate a random position for a node.
  */
-function allocatePosition(){
+function allocatePosition() {
     var x = rand.uniInt(0, sim_mng.SIM_BORDER[0]);
     var y = rand.uniInt(0, sim_mng.SIM_BORDER[1]);
     return new Vector2(x, y);
@@ -36,24 +36,33 @@ function Cloudlet(id) {
 
     this.componentRegistry = new Map();
 
-    /**
-     * {id : UserNode}
-     */
     this.userNodes = new Map();
 
-    this.emitter = new events.EventEmitter();
-
-    /**
-     * pkg {compId, compSize}
-     */
-    this.emitter.on(event_define.OFFLADING_REQUEST, function (pkg) {
-
-    });
-
+    sim_mng.cloudlets.set(id, this);
 
 }
 
 Cloudlet.prototype = new Node;
+
+Cloudlet.prototype.discoverNode = function (range) {
+    // console.log(sim_mng.userNodes.size);
+    // New nodes come.
+    var cld = this;
+    sim_mng.userNodes.forEach(function (node, id, map) {
+        var dis = v2.vector2Distance(node.position, cld.position);
+        if (dis < range && !cld.userNodes.has(id)) {
+            // Add new nodes.
+            cld.userNodes.set(id, node);
+            // Joins
+            node.joinCloudlet(cld);
+        }
+    });
+    setTimeout(this.discoverNode.bind(this, range), sim_mng.DELTA_TIME * 10);
+}
+
+Cloudlet.prototype.startDiscover = function (range) {
+    this.discoverNode(range);
+}
 
 function UserNode(id) {
 
@@ -72,6 +81,8 @@ function UserNode(id) {
 
     // Start moving.
     this.mobility.move();
+
+    sim_mng.userNodes.set(id, this);
 
 }
 
@@ -92,12 +103,11 @@ UserNode.prototype.sendToCloudlet = function (event, id, time, obj) {
 
 /**
  * User node join a cloudlet and offload its components to the cloudlet.
- * @parma   {Cloudlet} c The cloudlet node is joining.
+ * @param   {Cloudlet} c The cloudlet node is joining.
  */
 UserNode.prototype.joinCloudlet = function (c) {
     this.cloudlet = c;
     this.app.speed = c.speed;
-    this.cloudlet.userNodes.Set(this.id, this);
 }
 
 exports.UserNode = UserNode;

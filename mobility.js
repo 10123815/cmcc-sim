@@ -51,7 +51,7 @@ RWP.prototype.move = function () {
 
     sim_mng.SIM_TIME += 1000;
     setTimeout(this.move.bind(this), sim_mng.DELTA_TIME);
-    console.log(this.node.position);
+    // console.log(this.node.position);
 }
 
 exports.RWP = RWP;

@@ -10,3 +10,6 @@ var UserNode = require('./net-node').UserNode;
 var Cloudlet = require('./net-node').Cloudlet;
 
 var userNode = new UserNode(1);
+
+var cloudlet = new Cloudlet(1000);
+cloudlet.startDiscover(10, 500);
