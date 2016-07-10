@@ -1,4 +1,5 @@
 *.node
 jsconfig.json
+*.txt
 typings/
 .vscode/

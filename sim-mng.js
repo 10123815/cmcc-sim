@@ -17,4 +17,4 @@ exports.SIM_BORDER = [1000, 1000];
 exports.USER_NUMBER = 50;
 exports.CLOUDLET_NUMBER = 5;
 
-exports.BANDWIDTH = 1677721.6;  // bits
+exports.BANDWIDTH = 200000000;  // bits

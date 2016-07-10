@@ -50,7 +50,6 @@ Method.prototype.expectSpeed = function () {
 
 function Component(app, id) {
 
-    this.offloaded = false;
     this.id = id;
 
     /**
@@ -81,21 +80,35 @@ function Component(app, id) {
 }
 
 /**
- * Run a component on a node of speed.
- * @param {Number}      speed   Speed of the node.
+ * Run a component on a node. The speed is dynamic.
  * @param {Number}      index   Index of the method in the component.
  */
-Component.prototype.run = function (speed, index) {
+Component.prototype.run = function (index) {
     if (index >= this.methods.length) {
         compEvent.emit('end', this.belong);
         return;
     }
 
-    var exeTime = this.methods[index].run(speed);
-    if (this.offloaded) {
+    // The method's execution time.
+    var exeTime = 0;
+
+    // Offloaded??
+    if (this.belong.nodeId >= 1000 &&               // At a cloudlet.
+        this.belong.speed > this.belong.oriSpeed) { // The cloudlet is more powerful.
+        // Add current request, and get the actual speed the cloudlet offered.
+        var cld = this.belong.node;
+        var spd = cld.allocateResource(this.methods[index]);
+        exeTime += this.methods[index].run(spd);
         // Add the transmit time.
         exeTime += (this.methods[index].arg + this.methods[index].res) / sim_mng.BANDWIDTH;
+        // Remove the request.
+        setTimeout(cld.removeMethod.bind(cld, this.methods[index]), exeTime * sim_mng.DELTA_TIME);
     }
+    else {
+        // Execute locally.
+        exeTime = this.methods[index].run(this.belong.oriSpeed);
+    }
+
     this.belong.addTime(exeTime);
     if (this.belong.nodeId == 0)
         fs.open("output.txt", "a", 0644, function (e, fd) {
@@ -107,7 +120,9 @@ Component.prototype.run = function (speed, index) {
                 fs.closeSync(fd);
             })
         });
-    setTimeout(this.run.bind(this, speed, index + 1), exeTime * sim_mng.DELTA_TIME);
+
+    // Run the next method.
+    setTimeout(this.run.bind(this, index + 1), exeTime * sim_mng.DELTA_TIME);
 }
 
 /**
@@ -155,8 +170,7 @@ compEvent.on('end', function (app) {
 
     app.currentCompIndex = nextIndex;
     // Run next component.
-    // runComp(app.speed, app.components[app.currentCompIndex], 0);
-    app.components[app.currentCompIndex].run(app.speed, 0);
+    app.components[app.currentCompIndex].run(0);
 });
 
 /**
@@ -174,6 +188,7 @@ function App(n) {
         this.components[i] = new Component(this, i);
     }
 
+    this.node = n;
     this.nodeId = n.id;
 
     /**
@@ -201,14 +216,8 @@ App.prototype.interval = function () {
 }
 
 App.prototype.start = function () {
-    var spd = this.oriSpeed;
-    if (this.speed > spd) {
-        // Offload !!!!
-        this.components[0].offloaded = true;
-        spd = this.speed;
-    }
-    // runComp(spd, this.components[0], 0);
-    this.components[0].run(spd, 0);
+    // Do not offload first components.
+    this.components[0].run(0);
 }
 
 // function StartApp(app) {

@@ -39,11 +39,42 @@ function Cloudlet(id) {
 
     this.userNodes = new Map();
 
+    /**
+     * Nodes will request computation capacity from this cloudlet.
+     */
+    this.runningMethods = [];
+
     sim_mng.cloudlets.set(id, this);
 
 }
 
 Cloudlet.prototype = new Node;
+
+/**
+ * Remove a method when it has running off.
+ */
+Cloudlet.prototype.removeMethod = function (m) {
+    var index = this.runningMethods.indexOf(m);
+    this.runningMethods = this.runningMethods.slice(index, 1);
+}
+
+/**
+ * A method request computation resource from a cloudlet.
+ * @param  {Method}  m  The method a node want to run.
+ */
+Cloudlet.prototype.allocateResource = function (m) {
+    var l = this.runningMethods.length;
+    if (l == 0) {
+        // This is the first method that monopolize the resource.
+        this.runningMethods.push(m);
+        return this.speed;
+    }
+    var total = 0;
+    for (var i = 0, l = this.runningMethods.length; i < l; i++) {
+        total += this.runningMethods[i].expectSpeed();
+    }
+    return m.expectSpeed() / total;
+}
 
 Cloudlet.prototype.discoverNode = function (range) {
     // console.log(sim_mng.userNodes.size);
@@ -127,8 +158,12 @@ UserNode.prototype.sendToCloudlet = function (event, id, time, obj) {
  * @param   {Cloudlet} c The cloudlet node is joining.
  */
 UserNode.prototype.joinCloudlet = function (c) {
+    if (this.cloudlet != null)
+        return;
     this.cloudlet = c;
+    this.app.node = c;
     this.app.speed = c.speed;
+    this.app.nodeId = c.id;
     if (this.id == 0)
         fs.open("output.txt", "a", 0644, function (e, fd) {
             console.log('++++++++++++++++++++++++++++++')
@@ -143,8 +178,12 @@ UserNode.prototype.joinCloudlet = function (c) {
 }
 
 UserNode.prototype.leaveCloudlet = function () {
+    if (this.cloudlet == null)
+        return;
     this.cloudlet = null;
-    this.app.speed = this.app.oriSpeed;
+    this.app.node = this;
+    this.app.speed = this.speed;
+    this.app.nodeId = this.id;
     if (this.id == 0)
         fs.open("output.txt", "a", 0644, function (e, fd) {
             console.log('--------------------------')
