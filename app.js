@@ -74,7 +74,8 @@ function Component(app, id) {
     for (var i = 0; i < methodCount; i++) {
         var mt = new Method(this.freq);
         this.methods[i] = mt;
-        this.codeSize += mt.load * mt.call;
+        // 10 from java code to machine instruction.
+        this.codeSize += mt.load * 10 * mt.call;
     }
     this.codeSize *= 32;
 }
@@ -97,11 +98,20 @@ Component.prototype.run = function (index) {
         this.belong.speed > this.belong.oriSpeed) { // The cloudlet is more powerful.
         // Add current request, and get the actual speed the cloudlet offered.
         var cld = this.belong.node;
+        // If the cloudlet does not has the component.
+        if (!cld.CR.has(this.id)) {
+            cld.CR.add(this.id);
+            // Transmit the component bit code.
+            var transmitTime = this.codeSize / sim_mng.BANDWIDTH;
+            this.belong.addTime(transmitTime);
+            // Execute thie method after transmit.
+            setTimeout(this.run.bind(this, index), transmitTime * sim_mng.DELTA_TIME);
+        }
         var spd = cld.allocateResource(this.methods[index]);
         exeTime += this.methods[index].run(spd);
         // Add the transmit time.
         exeTime += (this.methods[index].arg + this.methods[index].res) / sim_mng.BANDWIDTH;
-        // Remove the request.
+        // Remove the current request after it has completed.
         setTimeout(cld.removeMethod.bind(cld, this.methods[index]), exeTime * sim_mng.DELTA_TIME);
     }
     else {

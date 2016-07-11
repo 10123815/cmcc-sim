@@ -35,7 +35,7 @@ function Cloudlet(id) {
 
     Node.call(this, id, this.speed);
 
-    this.componentRegistry = new Map();
+    this.CR = new Set();
 
     this.userNodes = new Map();
 
