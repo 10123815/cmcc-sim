@@ -32,10 +32,11 @@ var CALL_GRAPH = [
 ];
 
 function Method(f) {
-    this.load = rand.penorm(0.025, 167);            // intros
+    this.load = 0;   // intros
+    this.arg = 0;    // bits
+    this.res = 0;    // bits
+
     this.call = rand.geo(0.25) + 1;
-    this.arg = rand.penorm(0.00000125, 83)    // bits
-    this.res = rand.penorm(0.0000125, 83)      // bits
 
     this.compFreq = f;
 }
@@ -68,16 +69,26 @@ function Component(app, id) {
      */
     this.freq = 1 / rand.exp(rand.pnorm(0.0001, 0.000025)) * 7;
 
+    // The instruction size of the components.
+    this.codeSize = sim_mng.COMP_CODE_SIZE * sim_mng.METHOD_PERC;
+
+    // Calculate the methods' load and arguments' size.
     var methodCount = rand.geo(0.25) + 1;
     this.methods = new Array(methodCount);
-
+    // 10 for Java code and 32 for 32-bits machine.
+    var oneMethodload = this.codeSize / methodCount / 320;
+    var oneMethodArg = (sim_mng.COMP_CODE_SIZE - this.codeSize) / methodCount;  // bits.
+    // console.log(oneMethodload);
     for (var i = 0; i < methodCount; i++) {
         var mt = new Method(this.freq);
+        // Set up the method.
+        mt.load = rand.penorm(1 / (oneMethodload / mt.call), 167);
+        var arg = oneMethodArg / mt.call / 11;
+        mt.arg = rand.penorm(1 / (arg * 10), 83);
+        mt.res = rand.penorm(1 / arg, 83);
+        console.log(mt);
         this.methods[i] = mt;
-        // 10 from java code to machine instruction.
-        this.codeSize += mt.load * 10 * mt.call;
     }
-    this.codeSize *= 32;
 }
 
 /**
