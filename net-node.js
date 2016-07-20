@@ -48,7 +48,7 @@ function Cloudlet(id) {
 
 }
 
-Cloudlet.prototype = new Node;
+Cloudlet.prototype = new Node();
 
 /**
  * Remove a method when it has running off.
@@ -56,7 +56,7 @@ Cloudlet.prototype = new Node;
 Cloudlet.prototype.removeMethod = function (m) {
     var index = this.runningMethods.indexOf(m);
     this.runningMethods = this.runningMethods.slice(index, 1);
-}
+};
 
 /**
  * A method request computation resource from a cloudlet.
@@ -64,17 +64,17 @@ Cloudlet.prototype.removeMethod = function (m) {
  */
 Cloudlet.prototype.allocateResource = function (m) {
     var l = this.runningMethods.length;
-    if (l == 0) {
+    if (l === 0) {
         // This is the first method that monopolize the resource.
         this.runningMethods.push(m);
         return this.speed;
     }
     var total = 0;
-    for (var i = 0, l = this.runningMethods.length; i < l; i++) {
+    for (var i = 0, length = this.runningMethods.length; i < length; i++) {
         total += this.runningMethods[i].expectSpeed();
     }
     return m.expectSpeed() / total;
-}
+};
 
 Cloudlet.prototype.discoverNode = function (range) {
     // console.log(sim_mng.userNodes.size);
@@ -90,12 +90,12 @@ Cloudlet.prototype.discoverNode = function (range) {
         }
     });
     setTimeout(this.discoverNode.bind(this, range), sim_mng.DELTA_TIME * 1000);
-}
+};
 
 Cloudlet.prototype.startDiscover = function (range) {
     this.range = range;
     this.discoverNode(range);
-}
+};
 
 Cloudlet.prototype.check = function () {
     var cld = this;
@@ -110,11 +110,11 @@ Cloudlet.prototype.check = function () {
         }
     });
     setTimeout(this.check.bind(this), sim_mng.DELTA_TIME * 1000);
-}
+};
 
 Cloudlet.prototype.startCheck = function () {
     this.check();
-}
+};
 
 function UserNode(id) {
 
@@ -125,6 +125,7 @@ function UserNode(id) {
     this.cloudlet = null;
 
     this.app = new App(this);
+    this.app.oriNodeId = id;
 
     this.mobility = new mm.RWP(this);
 
@@ -138,7 +139,7 @@ function UserNode(id) {
 
 }
 
-UserNode.prototype = new Node;
+UserNode.prototype = new Node();
 
 /**
  * Emit a event on a cloudlet node.
@@ -151,51 +152,29 @@ UserNode.prototype.sendToCloudlet = function (event, id, time, obj) {
     setTimeout(function () {
         cloudets[id].emitter.emit(event, obj);
     }, time);
-}
+};
 
 /**
  * User node join a cloudlet and offload its components to the cloudlet.
  * @param   {Cloudlet} c The cloudlet node is joining.
  */
 UserNode.prototype.joinCloudlet = function (c) {
-    if (this.cloudlet != null)
+    if (this.cloudlet !== null)
         return;
     this.cloudlet = c;
     this.app.node = c;
     this.app.speed = c.speed;
     this.app.nodeId = c.id;
-    if (this.id == 0)
-        fs.open("output.txt", "a", 0644, function (e, fd) {
-            console.log('++++++++++++++++++++++++++++++')
-            if (e)
-                throw e;
-            fs.write(fd, '-100\n', 0, 'utf8', function (e) {
-                if (e)
-                    throw e;
-                fs.closeSync(fd);
-            })
-        });
-}
+};
 
 UserNode.prototype.leaveCloudlet = function () {
-    if (this.cloudlet == null)
+    if (this.cloudlet === null)
         return;
     this.cloudlet = null;
     this.app.node = this;
     this.app.speed = this.speed;
     this.app.nodeId = this.id;
-    if (this.id == 0)
-        fs.open("output.txt", "a", 0644, function (e, fd) {
-            console.log('--------------------------')
-            if (e)
-                throw e;
-            fs.write(fd, '-500\n', 0, 'utf8', function (e) {
-                if (e)
-                    throw e;
-                fs.closeSync(fd);
-            })
-        });
-}
+};
 
 exports.UserNode = UserNode;
 exports.Cloudlet = Cloudlet;

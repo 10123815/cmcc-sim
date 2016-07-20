@@ -14,6 +14,6 @@ for (var i = 0; i < sim.USER_NUMBER; i++) {
 
 for (var i = 0; i < sim.CLOUDLET_NUMBER; i++) {
     var cloudlet = new Cloudlet(1000 + i);
-    cloudlet.startDiscover(1000);
+    cloudlet.startDiscover(50);
     cloudlet.startCheck();
 }

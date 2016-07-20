@@ -12,6 +12,7 @@ var sim_mng = require('./sim-mng');
 var events = require('events');
 
 var fs = require('fs');
+var fd = fs.openSync('output.txt', 'a');
 
 /**
  * Component related events.
@@ -43,11 +44,11 @@ function Method(f) {
 
 Method.prototype.run = function (speed) {
     return this.load * this.call / speed;
-}
+};
 
 Method.prototype.expectSpeed = function () {
     return this.load * this.call * this.compFreq;
-}
+};
 
 function Component(app, id) {
 
@@ -86,7 +87,6 @@ function Component(app, id) {
         var arg = oneMethodArg / mt.call / 11;
         mt.arg = rand.penorm(1 / (arg * 10), 83);
         mt.res = rand.penorm(1 / arg, 83);
-        console.log(mt);
         this.methods[i] = mt;
     }
 }
@@ -131,20 +131,17 @@ Component.prototype.run = function (index) {
     }
 
     this.belong.addTime(exeTime);
-    if (this.belong.nodeId == 0)
-        fs.open("output.txt", "a", 0644, function (e, fd) {
-            if (e)
-                throw e;
-            fs.write(fd, exeTime + '\n', 0, 'utf8', function (e) {
-                if (e)
-                    throw e;
-                fs.closeSync(fd);
-            })
-        });
-
+    if (this.belong.oriNodeId === 0) {
+        try {
+            fs.writeSync(fd, exeTime + '\n', 0, 'utf8');
+        } catch (error) {
+            console.log(error);
+            fs.closeSync(fd);
+        }
+    }
     // Run the next method.
     setTimeout(this.run.bind(this, index + 1), exeTime * sim_mng.DELTA_TIME);
-}
+};
 
 /**
  * When a component is completed, run the next one.
@@ -160,7 +157,7 @@ compEvent.on('end', function (app) {
             probilities[i] = sum;
         }
     }
-    if (sum == 0) {
+    if (sum === 0) {
         // Is the last component.
         // Restart the app.
         app.currentCompIndex = 0;
@@ -200,6 +197,8 @@ compEvent.on('end', function (app) {
  */
 function App(n) {
 
+    this.oriNodeId = 0;
+
     /**
      * All components of this app.
      */
@@ -230,25 +229,18 @@ function App(n) {
 
 App.prototype.addTime = function (time) {
     this.time += time;
-}
+};
 
 App.prototype.interval = function () {
     return rand.exp(rand.pnorm(0.0001, 0.000025));
-}
+};
 
+/**
+ * User launch this App.
+ */
 App.prototype.start = function () {
     // Do not offload first components.
     this.components[0].run(0);
-}
-
-// function StartApp(app) {
-//     var spd = app.oriSpeed;
-//     if (app.speed > app.oriSpeed) {
-//         // Offload!!!!
-//         app.components[0].offloaded = true;
-//         spd = app.speed;
-//     }
-//     runComp(spd, app.components[0], 0);
-// }
+};
 
 exports.App = App;
