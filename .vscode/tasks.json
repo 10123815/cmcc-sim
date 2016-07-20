@@ -1,0 +1,10 @@
+{
+    "version": "0.1.0",
+    "command": "python",
+    "windows": {
+        "command": "D:\\Python27\\python.exe"
+    },
+    "args": [
+        "${file}"
+    ]
+}
