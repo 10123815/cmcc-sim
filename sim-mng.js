@@ -21,4 +21,4 @@ exports.BANDWIDTH = 200000000;              // bits
 
 exports.COMP_CODE_SIZE = 1024 * 1024 * 4;   // 500 KB
 
-exports.METHOD_PERC = 0.6;
+exports.METHOD_PERC = 0.01;
