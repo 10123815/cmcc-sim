@@ -118,7 +118,8 @@ Cloudlet.prototype.startCheck = function () {
 
 function UserNode(id) {
 
-    this.speed = rand.pnorm(1, 0.4) * rand.uniInt(1, 4);    // intros/ms
+    // this.speed = rand.pnorm(1, 0.4) * rand.uniInt(1, 4);    // intros/ms
+    this.speed = 2.5;
 
     Node.call(this, id, this.speed);
 

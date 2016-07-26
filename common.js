@@ -9,8 +9,8 @@
  * @param {Nunber} y Y element of the vector.
  */
 function Vector2(x, y) {
-	this.x = x || 0
-	this.y = y || 0
+	this.x = x || 0;
+	this.y = y || 0;
 }
 
 /**
@@ -18,7 +18,7 @@ function Vector2(x, y) {
  */
 Vector2.prototype.length = function () {
 	return Math.sqrt(this.x * this.x + this.y * this.y)
-}
+};
 
 /**
  * Normalize the 2d vector.
@@ -29,7 +29,7 @@ Vector2.prototype.normalize = function () {
 	this.y /= len;
 }
 
-exports.Vector2 = Vector2
+exports.Vector2 = Vector2;
 
 /**
  * Add two Vector2.
@@ -43,24 +43,24 @@ exports.vector2Add = function (a, b) {
  */
 exports.vector2Minus = function (a, b) {
 	return new Vector2(a.x - b.x, a.y - b.y)
-}
+};
 
 /**
  * Multiplies a vector by a number.
  */
 exports.vector2Multi = function (a, m) {
 	return new Vector2(a.x * m, a.y * m);
-}
+};
 
 /**
  * Angle of two 2d vectors in degrees
  */
 exports.vector2Angle = function (a, b) {
-	const dot = exports.vector2Dot(a, b)
-	const la = a.length()
-	const lb = b.length()
-	const theta = dot / (la * lb)
-	return Math.acos(theta) * 180 / Math.PI
+	const dot = exports.vector2Dot(a, b);
+	const la = a.length();
+	const lb = b.length();
+	const theta = dot / (la * lb);
+	return Math.acos(theta) * 180 / Math.PI;
 }
 
 /**

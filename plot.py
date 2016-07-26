@@ -26,9 +26,11 @@ def smooth(x, y, step):
 
 def average_file_data(file_name):
     infile = open(file_name, 'r')
-    inlist = [float(x) for x in infile.readlines()]
+    inlist = [float(x) for x in infile.readlines() if not math.isnan(float(x))]
     infile.close()
     return sum(inlist) / len(inlist)
+
+# print average_file_data("output.txt")
 
 def plot_dict(file_name):
     infile = open(file_name, 'r')
@@ -36,9 +38,9 @@ def plot_dict(file_name):
     infile.close()
     x = [float(arr.split(' ')[0]) for arr in inlist]
     y = [float(arr.split(' ')[1]) for arr in inlist]
-    (xx, yy) = smooth(x, y, 0.001)
-    plt.plot(xx, yy)
+    (x, y) = smooth(x, y, 0.001)
+    plt.plot(x, y)
     plt.show()
 
-print plot_dict('./result/intro-size')
+print plot_dict('./result/intro-size-bw')
     

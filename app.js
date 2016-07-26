@@ -37,7 +37,8 @@ function Method(f) {
     this.arg = 0;    // bits
     this.res = 0;    // bits
 
-    this.call = rand.geo(0.25) + 1;
+    // this.call = rand.geo(0.25) + 1;
+    this.call = 4;
 
     this.compFreq = f;
 }
@@ -68,13 +69,15 @@ function Component(app, id) {
      * How often this component be called in 1/ms. 
      * Initialized with the sequence's arrival interval.
      */
-    this.freq = 1 / rand.exp(rand.pnorm(0.0001, 0.000025)) * 7;
+    // this.freq = 1 / rand.exp(rand.pnorm(0.0001, 0.000025)) * 7;
+    this.freq = 0.0007;
 
     // The instruction size of the components.
     this.codeSize = sim_mng.COMP_CODE_SIZE * sim_mng.METHOD_PERC;
 
     // Calculate the methods' load and arguments' size.
-    var methodCount = rand.geo(0.25) + 1;
+    // var methodCount = rand.geo(0.25) + 1;
+    var methodCount = 4;
     this.methods = new Array(methodCount);
     // 10 for Java code and 32 for 32-bits machine.
     var oneMethodload = this.codeSize / methodCount / 320;
@@ -83,10 +86,14 @@ function Component(app, id) {
     for (var i = 0; i < methodCount; i++) {
         var mt = new Method(this.freq);
         // Set up the method.
-        mt.load = rand.penorm(1 / (oneMethodload / mt.call), 167);
+        // mt.load = rand.penorm(1 / (oneMethodload / mt.call), 167);
+        // var arg = oneMethodArg / mt.call / 11;
+        // mt.arg = rand.penorm(1 / (arg * 10), 83);
+        // mt.res = rand.penorm(1 / arg, 83);
+        mt.load = oneMethodload / mt.call;
         var arg = oneMethodArg / mt.call / 11;
-        mt.arg = rand.penorm(1 / (arg * 10), 83);
-        mt.res = rand.penorm(1 / arg, 83);
+        mt.arg = arg * 10;
+        mt.res = arg;
         this.methods[i] = mt;
     }
 }
@@ -121,7 +128,9 @@ Component.prototype.run = function (index) {
         var spd = cld.allocateResource(this.methods[index]);
         exeTime += this.methods[index].run(spd);
         // Add the transmit time.
-        exeTime += (this.methods[index].arg + this.methods[index].res) / sim_mng.BANDWIDTH;
+        var transUserCount = rand.uniInt(1, sim_mng.USER_NUMBER);
+        var bandwidth = sim_mng.BANDWIDTH / transUserCount;
+        exeTime += (this.methods[index].arg + this.methods[index].res) / bandwidth;
         // Remove the current request after it has completed.
         setTimeout(cld.removeMethod.bind(cld, this.methods[index]), exeTime * sim_mng.DELTA_TIME);
     }
