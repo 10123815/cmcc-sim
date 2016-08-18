@@ -177,6 +177,7 @@ UserNode.prototype.leaveCloudlet = function () {
     this.app.node = this;
     this.app.speed = this.speed;
     this.app.nodeId = this.id;
+    this.app.rerunningDelay();
 };
 
 exports.UserNode = UserNode;

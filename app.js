@@ -257,4 +257,11 @@ App.prototype.start = function () {
     this.components[0].run(0);
 };
 
+/**
+ * Calculate the re-running delay of this handoff.
+ */
+App.prototype.rerunningDelay = function() {
+    
+};
+
 exports.App = App;
