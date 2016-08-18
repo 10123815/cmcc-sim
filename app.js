@@ -124,6 +124,7 @@ Component.prototype.run = function (index) {
             this.belong.addTime(transmitTime);
             // Execute thie method after transmit.
             setTimeout(this.run.bind(this, index), transmitTime * sim_mng.DELTA_TIME);
+            return;
         }
         var spd = cld.allocateResource(this.methods[index]);
         exeTime += this.methods[index].run(spd);
@@ -132,6 +133,7 @@ Component.prototype.run = function (index) {
         var bandwidth = sim_mng.BANDWIDTH / transUserCount;
         exeTime += (this.methods[index].arg + this.methods[index].res) / bandwidth;
         // Remove the current request after it has completed.
+        // Do not need add time.
         setTimeout(cld.removeMethod.bind(cld, this.methods[index]), exeTime * sim_mng.DELTA_TIME);
     }
     else {
@@ -238,6 +240,9 @@ function App(n) {
 
 App.prototype.addTime = function (time) {
     this.time += time;
+    if (this.time > sim_mng.SIM_TIME) {
+        sim_mng.SIM_TIME = this.time;
+    }
 };
 
 App.prototype.interval = function () {

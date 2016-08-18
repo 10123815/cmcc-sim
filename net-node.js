@@ -104,9 +104,11 @@ Cloudlet.prototype.check = function () {
         // console.log(dis);
         if (dis > cld.range) {
             // Remove this node.
+            var t = sim_mng.SIM_TIME;
             map.delete(id);
             // Leave
             node.leaveCloudlet();
+
         }
     });
     setTimeout(this.check.bind(this), sim_mng.DELTA_TIME * 1000);
