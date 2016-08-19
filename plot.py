@@ -30,7 +30,7 @@ def average_file_data(file_name):
     infile.close()
     return sum(inlist) / len(inlist)
 
-print average_file_data("output.txt")
+# print average_file_data("output.txt")
 
 def plot_dict(file_name):
     infile = open(file_name, 'r')
@@ -44,3 +44,20 @@ def plot_dict(file_name):
 
 # print plot_dict('./result/intro-size-bw-smallml')
     
+def plot_arr(file_name):
+    infile = open(file_name)
+    inlist = infile.readlines()
+    infile.close()
+    x = len(inlist)
+    y = []
+    for i in xrange(x):
+        try:
+            y.append(float(inlist[i]))
+        except ValueError:
+            x -= 1
+    x = range(x)
+    [x, y] = smooth(x, y, 0.1)
+    plt.plot(x, y)
+    plt.show()
+
+plot_arr("./output.txt")

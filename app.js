@@ -86,14 +86,14 @@ function Component(app, id) {
     for (var i = 0; i < methodCount; i++) {
         var mt = new Method(this.freq);
         // Set up the method.
-        // mt.load = rand.penorm(1 / (oneMethodload / mt.call), 167);
-        // var arg = oneMethodArg / mt.call / 11;
-        // mt.arg = rand.penorm(1 / (arg * 10), 83);
-        // mt.res = rand.penorm(1 / arg, 83);
-        mt.load = oneMethodload / mt.call;
+        mt.load = rand.penorm(1 / (oneMethodload / mt.call), 167);
         var arg = oneMethodArg / mt.call / 11;
-        mt.arg = arg * 10;
-        mt.res = arg;
+        mt.arg = rand.penorm(1 / (arg * 10), 83);
+        mt.res = rand.penorm(1 / arg, 83);
+        // mt.load = oneMethodload / mt.call;
+        // var arg = oneMethodArg / mt.call / 11;
+        // mt.arg = arg * 10;
+        // mt.res = arg;
         this.methods[i] = mt;
     }
 }
@@ -110,6 +110,7 @@ Component.prototype.run = function (index) {
 
     // The method's execution time.
     var exeTime = 0;
+    this.belong.currentMethodIndex = index;
 
     // Offloaded??
     if (this.belong.nodeId >= 1000 &&               // At a cloudlet.
@@ -144,7 +145,7 @@ Component.prototype.run = function (index) {
     this.belong.addTime(exeTime);
     if (this.belong.oriNodeId === 0) {
         try {
-            fs.writeSync(fd, exeTime + '\n', 0, 'utf8');
+            fs.writeSync(fd, this.belong.rerunningDelay() + '\n', 0, 'utf8');
         } catch (error) {
             console.log(error);
             fs.closeSync(fd);
@@ -187,7 +188,7 @@ compEvent.on('end', function (app) {
         }
     }
 
-    if (nextIndex == -1) {
+    if (nextIndex === -1) {
         // No next component.
         // Restart the app.
         app.currentCompIndex = 0;
@@ -233,6 +234,7 @@ function App(n) {
     this.oriSpeed = n.speed;
 
     this.currentCompIndex = 0;
+    this.currentMethodIndex = 0;
 
     this.time = 0;
 
@@ -240,9 +242,6 @@ function App(n) {
 
 App.prototype.addTime = function (time) {
     this.time += time;
-    if (this.time > sim_mng.SIM_TIME) {
-        sim_mng.SIM_TIME = this.time;
-    }
 };
 
 App.prototype.interval = function () {
@@ -259,9 +258,18 @@ App.prototype.start = function () {
 
 /**
  * Calculate the re-running delay of this handoff.
+ * @return 0 if do not need to rerunning.
  */
-App.prototype.rerunningDelay = function() {
-    
+App.prototype.rerunningDelay = function () {
+    var now = Date.now() - sim_mng.START_TIME;
+    if (now + sim_mng.HANDOFF > this.time) {
+        var currentComp = this.components[this.currentCompIndex];
+        var currentMethod = currentComp[this.currentMethodIndex];
+        var exeTime = currentMethod.run(this.oriSpeed);
+        return now + exeTime - this.time;
+    } else {
+        return 0;
+    }
 };
 
 exports.App = App;
