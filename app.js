@@ -12,7 +12,9 @@ var sim_mng = require('./sim-mng');
 var events = require('events');
 
 var fs = require('fs');
-var fd = fs.openSync('output.txt', 'a');
+var fd1 = fs.openSync('output1.txt', 'a');
+var fd2 = fs.openSync('output2.txt', 'a');
+var fd3 = fs.openSync('output3.txt', 'a');
 
 /**
  * Component related events.
@@ -145,10 +147,24 @@ Component.prototype.run = function (index) {
     this.belong.addTime(exeTime);
     if (this.belong.oriNodeId === 0) {
         try {
-            fs.writeSync(fd, this.belong.rerunningDelay() + '\n', 0, 'utf8');
+            fs.writeSync(fd1, this.belong.rerunningDelay() + '\n', 0, 'utf8');
         } catch (error) {
             console.log(error);
-            fs.closeSync(fd);
+            fs.closeSync(fd1);
+        }
+    } else if (this.belong.oriNodeId === 1) {
+        try {
+            fs.writeSync(fd2, this.belong.rerunningDelay() + '\n', 0, 'utf8');
+        } catch (error) {
+            console.log(error);
+            fs.closeSync(fd2);
+        }
+    }else if (this.belong.oriNodeId === 2) {
+        try {
+            fs.writeSync(fd3, this.belong.rerunningDelay() + '\n', 0, 'utf8');
+        } catch (error) {
+            console.log(error);
+            fs.closeSync(fd3);
         }
     }
     // Run the next method.
@@ -262,9 +278,9 @@ App.prototype.start = function () {
  */
 App.prototype.rerunningDelay = function () {
     var now = Date.now() - sim_mng.START_TIME;
-    if (now + sim_mng.HANDOFF > this.time) {
+    if (now + sim_mng.HANDOFF[this.oriNodeId] > this.time) {
         var currentComp = this.components[this.currentCompIndex];
-        var currentMethod = currentComp[this.currentMethodIndex];
+        var currentMethod = currentComp.methods[this.currentMethodIndex];
         var exeTime = currentMethod.run(this.oriSpeed);
         return now + exeTime - this.time;
     } else {
