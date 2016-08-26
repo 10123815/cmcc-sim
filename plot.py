@@ -30,8 +30,6 @@ def average_file_data(file_name):
     infile.close()
     return sum(inlist) / len(inlist)
 
-# print average_file_data("output.txt")
-
 def plot_dict(file_name):
     infile = open(file_name, 'r')
     inlist = infile.readlines()
@@ -60,4 +58,44 @@ def plot_arr(file_name):
     plt.plot(x, y)
     plt.show()
 
-plot_arr("./output.txt")
+def plot_arrs(file_names, colors):
+    count = len(file_names)
+    for i in xrange(count):
+        infile = open(file_names[i])
+        inlist = infile.readlines()
+        infile.close()
+        x = len(inlist)
+        y = []
+        for j in xrange(x):
+            try:
+                y.append(float(inlist[j]))
+            except ValueError:
+                x -= 1
+        x = range(x)
+        [x, y] = smooth(x, y, 0.1)
+        plt.plot(x, y, color = colors[i])
+    plt.show()
+
+def average_plot(file_names):
+    count = len(file_names)
+    y = []
+    for i in xrange(count):
+        ave = average_file_data(file_names[i])
+        y.append(ave)
+    w = 0.07
+    x = [0.05, 0.25, 0.45]
+    rects1 = plt.bar(x, y, width = w)
+    plt.tight_layout()
+    def autolabel(rects):
+        for rect in rects:
+            height = rect.get_height()
+            plt.text(rect.get_x() + w / 5, 1.03 * height, '%s' % '%.3f' % float(height)) 
+    autolabel(rects1)
+    plt.legend()
+    ax = plt.axes()        
+    ax.yaxis.grid() # horizontal lines
+    plt.show()
+
+# plot_arr("./output1.txt")
+plot_arrs(["./output1.txt", "./output2.txt", "./output3.txt"], ["red", "green", "blue"])
+average_plot(["./output1.txt", "./output2.txt", "./output3.txt"])
