@@ -27,7 +27,7 @@ Vector2.prototype.normalize = function () {
 	len = this.length();
 	this.x /= len;
 	this.y /= len;
-}
+};
 
 exports.Vector2 = Vector2;
 
@@ -35,14 +35,14 @@ exports.Vector2 = Vector2;
  * Add two Vector2.
  */
 exports.vector2Add = function (a, b) {
-	return new Vector2(a.x + b.x, a.y + b.y)
-}
+	return new Vector2(a.x + b.x, a.y + b.y);
+};
 
 /**
  * Minus one Vector2 from another.
  */
 exports.vector2Minus = function (a, b) {
-	return new Vector2(a.x - b.x, a.y - b.y)
+	return new Vector2(a.x - b.x, a.y - b.y);
 };
 
 /**
@@ -56,30 +56,30 @@ exports.vector2Multi = function (a, m) {
  * Angle of two 2d vectors in degrees
  */
 exports.vector2Angle = function (a, b) {
-	const dot = exports.vector2Dot(a, b);
-	const la = a.length();
-	const lb = b.length();
-	const theta = dot / (la * lb);
+	var dot = exports.vector2Dot(a, b);
+	var la = a.length();
+	var lb = b.length();
+	var theta = dot / (la * lb);
 	return Math.acos(theta) * 180 / Math.PI;
-}
+};
 
 /**
  * Distance of 2 points
  */
 exports.vector2Distance = function (a, b) {
-	const dx = a.x - b.x;
-	const dy = a.y - b.y;
-	return Math.sqrt(dx * dx + dy * dy)
-}
+	var dx = a.x - b.x;
+	var dy = a.y - b.y;
+	return Math.sqrt(dx * dx + dy * dy);
+};
 
 /**
  * Dot Product of two 2d vectors.
  */
 exports.vector2Dot = function (a, b) {
-	const mx = a.x * b.x
-	const my = a.y * b.y
-	return mx + my
-}
+	var mx = a.x * b.x;
+	var my = a.y * b.y;
+	return mx + my;
+};
 
 /**
  * Normalize a 2d vector.
@@ -88,7 +88,7 @@ exports.vector2Normalize = function (a) {
 	var len = a.length();
 	var vec = new Vector2(a.x / len, a.y / len);
 	return vec;
-}
+};
 
 /**
  * Linearly interpolates between two Vector2s by t.
@@ -98,14 +98,14 @@ exports.vector2Normalize = function (a) {
  * @param t {Number} The normalized distance from point a.
  */
 exports.vector2Lerp = function (a, b, t) {
-	t = Math.max(0, t)
-	t = Math.min(1, t)
-	const ax = a.x * (1 - t)
-	const ay = a.y * (1 - t)
-	const bx = b.x * t
-	const by = b.y * t
-	return new Vector2(ax + bx, ay + by)
-}
+	t = Math.max(0, t);
+	t = Math.min(1, t);
+	var ax = a.x * (1 - t);
+	var ay = a.y * (1 - t);
+	var bx = b.x * t;
+	var by = b.y * t;
+	return new Vector2(ax + bx, ay + by);
+};
 
 /**
  * Reflects a vector off the vector defined by a normal.
@@ -113,12 +113,12 @@ exports.vector2Lerp = function (a, b, t) {
  * @param norm {Vector2} Normal direction.
  */
 exports.vector2Reflect = function (light, norm) {
-	light = light.normalize()
-	norm = norm.normalize()
-	const v = 2 * exports.vector2Dot(light, norm)
-	var ref = new Vector2(v * norm.x - light.x, v * norm.y - light.y)
+	light = light.normalize();
+	norm = norm.normalize();
+	var v = 2 * exports.vector2Dot(light, norm);
+	var ref = new Vector2(v * norm.x - light.x, v * norm.y - light.y);
 	return ref.normalize();
-}
+};
 
 /**
  * Triple cross of three vectors, a x b x c.
@@ -135,14 +135,14 @@ exports.vector2TripleCross = function (a, b, c) {
     y = b.y * ac - a.y * bc;
 
     return new Vector2(x, y);
-}
+};
 
 /**
  * Multiplies two vectors component-wise.
  */
 exports.vector2Scale = function (a, b) {
 	return new Vector2(a.x * b.x, a.y * b.y);
-}
+};
 
 /**
  * Zero vector.
